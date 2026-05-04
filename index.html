@@ -2,117 +2,181 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Stories</title>
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css"/>
+<title>Prototype</title>
 
 <style>
 html, body {
   margin: 0;
   height: 100%;
   background: black;
-  overflow: hidden;
+  font-family: Arial, sans-serif;
+  overflow-x: hidden;
 }
 
-/* pełny ekran */
-.swiper {
-  width: 100vw;
+/* SCENY */
+.scene {
   height: 100vh;
-}
-
-/* slide centrum */
-.swiper-slide {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: black;
+  color: white;
 }
 
-/* KLUCZ: bez cropa */
+/* VIDEO — KLUCZ: brak ucinania + różne proporcje */
 video {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+
   max-width: 100%;
   max-height: 100%;
+
+  width: auto;
+  height: auto;
+
   object-fit: contain;
   background: black;
+  z-index: 0;
 }
 
-/* strzałki widoczne */
-.swiper-button-next,
-.swiper-button-prev {
+/* DARK CINEMATIC OVERLAY */
+.scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center,
+    rgba(0,0,0,0.2),
+    rgba(0,0,0,0.85)
+  );
+  z-index: 1;
+}
+
+/* TEKST */
+.content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 800px;
+
+  opacity: 0;
+  transform: translateY(30px);
+  transition: 0.7s ease;
+}
+
+/* ACTIVE */
+.scene.active .content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tytuł */
+h1 {
+  font-size: 42px;
+  margin: 0 0 10px;
+}
+
+/* opis */
+p {
+  font-size: 18px;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+/* SEKCJA TITUŁÓW MIĘDZY */
+.title-screen {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: white;
+  text-align: center;
+}
+
+.title-screen h2 {
+  font-size: 50px;
+  letter-spacing: 2px;
+  opacity: 0.9;
 }
 </style>
 </head>
 
 <body>
 
-<div class="swiper">
-  <div class="swiper-wrapper">
+<!-- SCENA 1 -->
+<section class="scene">
+  <video muted playsinline>
+    <source src="film1.mp4">
+  </video>
 
-    <div class="swiper-slide">
-      <video muted playsinline>
-        <source src="film1.mp4">
-      </video>
-    </div>
-
-    <div class="swiper-slide">
-      <video muted playsinline>
-        <source src="film2.mp4">
-      </video>
-    </div>
-
+  <div class="content">
+    <h1>Lorem ipsum dolor sit amet</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</p>
   </div>
+</section>
 
-  <!-- STRZAŁKI -->
-  <div class="swiper-button-next"></div>
-  <div class="swiper-button-prev"></div>
-</div>
+<!-- TYTUŁ MIĘDZY -->
+<section class="title-screen">
+  <h2>CHAPTER I — AWAKENING</h2>
+</section>
 
-<script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
+<!-- SCENA 2 -->
+<section class="scene">
+  <video muted playsinline>
+    <source src="film2.mp4">
+  </video>
+
+  <div class="content">
+    <h1>Lorem ipsum dolor sit amet</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur vitae nisi nec nulla fermentum.</p>
+  </div>
+</section>
+
+<!-- TYTUŁ MIĘDZY -->
+<section class="title-screen">
+  <h2>CHAPTER II — SIGNAL</h2>
+</section>
+
+<!-- SCENA 3 -->
+<section class="scene">
+  <video muted playsinline>
+    <source src="film3.mp4">
+  </video>
+
+  <div class="content">
+    <h1>Lorem ipsum dolor sit amet</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.</p>
+  </div>
+</section>
 
 <script>
-const swiper = new Swiper('.swiper', {
-  direction: 'vertical',
-  navigation: {
-    nextEl: '.swiper-button-next',
-    prevEl: '.swiper-button-prev',
-  },
+const scenes = document.querySelectorAll(".scene");
 
-  on: {
-    slideChangeTransitionEnd: function () {
-      playActiveVideo();
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+
+    if (entry.isIntersecting) {
+
+      scenes.forEach(s => {
+        s.classList.remove("active");
+        const v = s.querySelector("video");
+        if (v) {
+          v.pause();
+          v.currentTime = 0;
+        }
+      });
+
+      entry.target.classList.add("active");
+
+      const video = entry.target.querySelector("video");
+      if (video) video.play().catch(()=>{});
     }
-  }
-});
-
-function stopAllVideos() {
-  document.querySelectorAll('video').forEach(v => {
-    v.pause();
-    v.currentTime = 0;
   });
-}
-
-function playActiveVideo() {
-  stopAllVideos();
-
-  const activeVideo = document.querySelector('.swiper-slide-active video');
-
-  if (!activeVideo) return;
-
-  // ważne: play musi być po user gesture / event
-  const playPromise = activeVideo.play();
-
-  if (playPromise !== undefined) {
-    playPromise.catch(err => {
-      console.log("Autoplay blocked:", err);
-    });
-  }
-}
-
-// start pierwszego
-window.addEventListener("load", () => {
-  playActiveVideo();
+}, {
+  threshold: 0.6
 });
+
+scenes.forEach(s => observer.observe(s));
 </script>
 
 </body>
