@@ -2,14 +2,17 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Prototype</title>
+<title>Cinematic Narrative Engine</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
 <style>
 html, body {
   margin: 0;
   height: 100%;
   background: black;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   overflow-x: hidden;
 }
 
@@ -20,10 +23,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  overflow: hidden;
 }
 
-/* VIDEO — KLUCZ: brak ucinania + różne proporcje */
+/* VIDEO */
 video {
   position: absolute;
   inset: 0;
@@ -37,66 +40,59 @@ video {
 
   object-fit: contain;
   background: black;
-  z-index: 0;
+  filter: blur(8px);
+  transform: scale(1.05);
 }
 
-/* DARK CINEMATIC OVERLAY */
+/* DARK CINEMA LAYER */
 .scene::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center,
-    rgba(0,0,0,0.2),
-    rgba(0,0,0,0.85)
-  );
+  background: radial-gradient(circle, rgba(0,0,0,0.2), rgba(0,0,0,0.92));
   z-index: 1;
 }
 
-/* TEKST */
+/* CONTENT */
 .content {
   position: relative;
   z-index: 2;
+  color: white;
   text-align: center;
-  max-width: 800px;
-
+  max-width: 700px;
   opacity: 0;
-  transform: translateY(30px);
-  transition: 0.7s ease;
+  transform: translateY(40px);
 }
 
-/* ACTIVE */
-.scene.active .content {
-  opacity: 1;
-  transform: translateY(0);
-}
+h1 { font-size: 40px; margin-bottom: 10px; }
+p { opacity: 0.8; }
 
-/* Tytuł */
-h1 {
-  font-size: 42px;
-  margin: 0 0 10px;
-}
-
-/* opis */
-p {
-  font-size: 18px;
-  opacity: 0.8;
-  line-height: 1.5;
-}
-
-/* SEKCJA TITUŁÓW MIĘDZY */
-.title-screen {
+/* CHAPTER */
+.chapter {
   height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  text-align: center;
+  font-size: 46px;
+  letter-spacing: 3px;
 }
 
-.title-screen h2 {
-  font-size: 50px;
-  letter-spacing: 2px;
-  opacity: 0.9;
+/* CHOICES */
+.choices {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  background: white;
+  color: black;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -104,79 +100,103 @@ p {
 <body>
 
 <!-- SCENA 1 -->
-<section class="scene">
+<section class="scene" data-scene="1">
   <video muted playsinline>
     <source src="film1.mp4">
   </video>
 
   <div class="content">
-    <h1>Lorem ipsum dolor sit amet</h1>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</p>
+    <h1>Nie wszystko jest tym, czym się wydaje</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
   </div>
 </section>
 
-<!-- TYTUŁ MIĘDZY -->
-<section class="title-screen">
-  <h2>CHAPTER I — AWAKENING</h2>
-</section>
+<div class="chapter">CHAPTER I — AWAKENING</div>
 
 <!-- SCENA 2 -->
-<section class="scene">
+<section class="scene" data-scene="2">
   <video muted playsinline>
     <source src="film2.mp4">
   </video>
 
   <div class="content">
-    <h1>Lorem ipsum dolor sit amet</h1>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur vitae nisi nec nulla fermentum.</p>
+    <h1>Słyszysz to?</h1>
+    <p>Lorem ipsum dolor sit amet, sed do eiusmod tempor.</p>
   </div>
 </section>
 
-<!-- TYTUŁ MIĘDZY -->
-<section class="title-screen">
-  <h2>CHAPTER II — SIGNAL</h2>
-</section>
+<div class="chapter">CHAPTER II — SIGNAL</div>
 
 <!-- SCENA 3 -->
-<section class="scene">
+<section class="scene" data-scene="3">
   <video muted playsinline>
     <source src="film3.mp4">
   </video>
 
   <div class="content">
-    <h1>Lorem ipsum dolor sit amet</h1>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.</p>
+    <h1>Teraz już wiesz</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
   </div>
 </section>
 
 <script>
-const scenes = document.querySelectorAll(".scene");
+gsap.registerPlugin(ScrollTrigger);
 
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
+/* 🎧 AUDIO (placeholder) */
+const audio = new Audio();
+audio.src = ""; // możesz tu dać ambient.mp3
+audio.loop = true;
 
-    if (entry.isIntersecting) {
+/* STATE */
+let storyState = {
+  choice: null
+};
 
-      scenes.forEach(s => {
-        s.classList.remove("active");
-        const v = s.querySelector("video");
-        if (v) {
-          v.pause();
-          v.currentTime = 0;
-        }
-      });
+/* SCENY */
+document.querySelectorAll(".scene").forEach(scene => {
+  const video = scene.querySelector("video");
+  const content = scene.querySelector(".content");
 
-      entry.target.classList.add("active");
+  if (video) video.load();
 
-      const video = entry.target.querySelector("video");
-      if (video) video.play().catch(()=>{});
-    }
+  ScrollTrigger.create({
+    trigger: scene,
+    start: "top center",
+    end: "bottom center",
+
+    onEnter: () => activate(scene, video, content),
+    onEnterBack: () => activate(scene, video, content)
   });
-}, {
-  threshold: 0.6
 });
 
-scenes.forEach(s => observer.observe(s));
+function activate(scene, video, content) {
+
+  // reset videos
+  document.querySelectorAll("video").forEach(v => {
+    v.pause();
+    v.currentTime = 0;
+    v.style.filter = "blur(10px)";
+  });
+
+  if (video) {
+    video.play().catch(()=>{});
+
+    gsap.to(video, {
+      filter: "blur(0px)",
+      duration: 1.2
+    });
+  }
+
+  gsap.to(content, {
+    opacity: 1,
+    y: 0,
+    duration: 0.8
+  });
+
+  // audio start (jeśli dodasz)
+  if (audio.src) audio.play();
+}
+
 </script>
 
 </body>
